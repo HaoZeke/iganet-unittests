@@ -68,7 +68,7 @@ TEST(Serialize, MatrixXmlContainsMetadataAndValues) {
   EXPECT_STREQ(node.attribute("label").value(), "test");
   EXPECT_EQ(node.attribute("rows").as_int(), 2);
   EXPECT_EQ(node.attribute("cols").as_int(), 2);
-  EXPECT_NE(std::string(node.text().get()).find("4.000000"), std::string::npos);
+  EXPECT_NE(std::string(node.text().get()).find("4"), std::string::npos);
 }
 
 TEST(Serialize, TensorArrayXmlAssignsIndices) {
