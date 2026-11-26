@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://github.com/tataratat/BSplineLib.git
+revision = 8a7d49a4223a1a029ff19148d3b95c4c4f769bb7
+method = cmake
