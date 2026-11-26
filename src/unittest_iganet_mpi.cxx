@@ -310,9 +310,18 @@ TEST(IgANetMPI, Consistency_check_detects_diverged_parameters) {
     }
   });
 
-  if (nranks() > 1)
-    EXPECT_THROW(net->train(), std::runtime_error);
-  else
+  if (nranks() > 1) {
+    try {
+      net->train();
+      ADD_FAILURE() << "the consistency check did not detect the perturbation";
+    } catch (const std::runtime_error &e) {
+      EXPECT_NE(std::string(e.what()).find("different network parameters"),
+                std::string::npos)
+          << e.what();
+      if (iganet::mpi::rank() == 0)
+        std::cout << "[mpi-test] guard: " << e.what() << std::endl;
+    }
+  } else
     EXPECT_NO_THROW(net->train());
 }
 
