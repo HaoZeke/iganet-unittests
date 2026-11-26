@@ -147,8 +147,8 @@ template <typename Net> std::vector<double> flatParameters(const Net &net) {
   std::vector<double> result;
   for (const auto &p : net.parameters()) {
     auto flat = p.detach().flatten().contiguous();
-    result.insert(result.end(), flat.data_ptr<double>(),
-                  flat.data_ptr<double>() + flat.numel());
+    result.insert(result.end(), flat.template data_ptr<double>(),
+                  flat.template data_ptr<double>() + flat.numel());
   }
   return result;
 }
@@ -314,6 +314,58 @@ TEST(IgANetMPI, Consistency_check_detects_diverged_parameters) {
     EXPECT_THROW(net->train(), std::runtime_error);
   else
     EXPECT_NO_THROW(net->train());
+}
+
+namespace {
+
+/// @brief Network of the deprecated v1 interface whose loss is the mean
+/// square of the output coefficients
+template <typename Optimizer, typename GeometryMap, typename Variable>
+class SquareV1 : public iganet::v1::IgANet<Optimizer, GeometryMap, Variable> {
+public:
+  using iganet::v1::IgANet<Optimizer, GeometryMap, Variable>::IgANet;
+
+  bool epoch(int64_t epoch) override { return epoch == 0; }
+
+  torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
+    return torch::mean(outputs.square());
+  }
+};
+
+} // namespace
+
+TEST(IgANetMPI, V1_train_matches_serial) {
+  using namespace iganet::literals;
+  using Optimizer = torch::optim::Adam;
+  using Space = iganet::S<iganet::UniformBSpline<real_t, 1, 5>>;
+
+  auto make = [](bool distributed) {
+    torch::manual_seed(77);
+    auto net = std::make_unique<SquareV1<Optimizer, Space, Space>>(
+        std::vector<int64_t>{20, 10},
+        std::vector<std::vector<std::any>>{{iganet::activation::tanh},
+                                           {iganet::activation::sigmoid},
+                                           {iganet::activation::none}},
+        std::tuple(iganet::utils::to_array(6_i64)));
+    net->options()
+        .max_epoch(8)
+        .min_loss(0.0)
+        .min_loss_change(0.0)
+        .min_loss_rel_change(0.0)
+        .mpi_data_parallel(distributed)
+        .mpi_check_interval(1);
+    return net;
+  };
+
+  auto serial = make(false);
+  serial->train();
+  auto dist = make(true);
+  dist->train();
+
+  auto ps = flatParameters(*serial);
+  auto pd = flatParameters(*dist);
+  EXPECT_LE(relError(pd, ps), tolerance);
+  EXPECT_EQ(rankSpread(pd), 0.0);
 }
 
 int main(int argc, char **argv) {
