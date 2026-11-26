@@ -2343,6 +2343,7 @@ TEST_F(BSplineTest, UniformBSpline_curl_parDim3_geoDim3) {
       torch::allclose(*curl[1], torch::full_like(xi[0], -8.0), 1e-4, 1e-5));
   EXPECT_TRUE(
       torch::allclose(*curl[2], torch::full_like(xi[0], 3.0), 1e-4, 1e-5));
+}
 
 TEST_F(BSplineTest, UniformBSpline_arithmetic_operators_keep_operands) {
   using bspline_type = iganet::UniformBSpline<real_t, 3, 3, 4>;
