@@ -1,0 +1,7 @@
+option(
+  'coeff_type',
+  type: 'combo',
+  choices: ['float', 'double'],
+  value: 'double',
+  description: 'Coefficient type of the splines under test (CMake: IGANET_UNITTESTS_COEFF_TYPE).',
+)
