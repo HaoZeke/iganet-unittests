@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/HaoZeke/iganet.git
+revision = build/meson
+depth = 1
+
+[provide]
+dependency_names = iganet, iganet-core
