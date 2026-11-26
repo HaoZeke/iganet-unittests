@@ -15,7 +15,10 @@
 #include <iganet/iganet.h>
 #include <xml_charconv.hpp>
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <iterator>
 #include <sstream>
+#include <vector>
 
 namespace {
 class SerializableValue final : public iganet::utils::Serializable {
@@ -68,7 +71,12 @@ TEST(Serialize, MatrixXmlContainsMetadataAndValues) {
   EXPECT_STREQ(node.attribute("label").value(), "test");
   EXPECT_EQ(node.attribute("rows").as_int(), 2);
   EXPECT_EQ(node.attribute("cols").as_int(), 2);
-  EXPECT_NE(std::string(node.text().get()).find("4"), std::string::npos);
+  // The text holds the four values, in any notation that reads back exactly.
+  std::istringstream text(node.text().get());
+  std::vector<double> values{std::istream_iterator<double>(text),
+                             std::istream_iterator<double>()};
+  std::sort(values.begin(), values.end());
+  EXPECT_EQ(values, (std::vector<double>{1., 2., 3., 4.}));
 }
 
 TEST(Serialize, TensorArrayXmlAssignsIndices) {
