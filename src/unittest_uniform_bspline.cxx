@@ -2324,6 +2324,25 @@ TEST_F(BSplineTest, UniformBSpline_to_device) {
   }
 }
 
+TEST_F(BSplineTest, UniformBSpline_to_from_xml_precision) {
+  iganet::UniformBSpline<real_t, 2, 2, 3> bspline_out({4, 5},
+                                                      iganet::init::greville,
+                                                      options);
+  bspline_out.transform([](const std::array<real_t, 2> xi) {
+    return std::array<real_t, 2>{
+        static_cast<real_t>(0.123456789012345) + xi[0],
+        static_cast<real_t>(1e-9) * (1.0_r + xi[1])};
+  });
+
+  pugi::xml_document doc = bspline_out.to_xml();
+
+  iganet::UniformBSpline<real_t, 2, 2, 3> bspline_in(options);
+  bspline_in.from_xml(doc);
+
+  for (iganet::short_t g = 0; g < 2; ++g)
+    EXPECT_TRUE(torch::equal(bspline_in.coeffs(g), bspline_out.coeffs(g)));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
