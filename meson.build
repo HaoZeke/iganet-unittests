@@ -33,7 +33,17 @@ gtest_main_dep = dependency('gtest_main', fallback: ['gtest', 'gtest_main_dep'])
 bsplinelib_options = cmake.subproject_options()
 bsplinelib_options.add_cmake_defines({'BSPLINELIB_SHARED': true})
 bsplinelib_proj = cmake.subproject('bsplinelib', options: bsplinelib_options)
-bsplinelib_dep = bsplinelib_proj.dependency('splines')
+# `splines` links utilities, parameter_spaces and vector_spaces PUBLIC in
+# CMake; the CMake backend of Meson does not pass those on, and the tests call
+# into them directly, so every component library is named here.
+bsplinelib_dep = declare_dependency(
+  dependencies: [
+    bsplinelib_proj.dependency('splines'),
+    bsplinelib_proj.dependency('utilities'),
+    bsplinelib_proj.dependency('parameter_spaces'),
+    bsplinelib_proj.dependency('vector_spaces'),
+  ],
+)
 
 unittest_args = ['-DUNITTEST_DISABLE_SHORT_MACROS']
 
